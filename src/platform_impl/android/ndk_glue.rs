@@ -34,26 +34,6 @@ use std::{
 /// in the android project.
 pub static PACKAGE: OnceCell<&str> = OnceCell::new();
 
-/// Character set for encoding text content in data URLs.
-/// Encodes all control characters and special characters that might cause issues in URLs.
-const DATA_URL_ENCODING_SET: &AsciiSet = &CONTROLS
-  .add(b' ')
-  .add(b'"')
-  .add(b'#')
-  .add(b'%')
-  .add(b'&')
-  .add(b'<')
-  .add(b'>')
-  .add(b'?')
-  .add(b'[')
-  .add(b'\\')
-  .add(b']')
-  .add(b'^')
-  .add(b'`')
-  .add(b'{')
-  .add(b'|')
-  .add(b'}');
-
 /// Generate JNI compilant functions that are necessary for
 /// building android apps with tao.
 ///
@@ -220,7 +200,6 @@ static INTENT_URLS: Lazy<Mutex<Vec<url::Url>>> = Lazy::new(Default::default);
 static INPUT_QUEUE: Lazy<RwLock<Option<InputQueue>>> = Lazy::new(Default::default);
 static CONTENT_RECT: Lazy<RwLock<Rect>> = Lazy::new(Default::default);
 static LOOPER: Lazy<Mutex<Option<ForeignLooper>>> = Lazy::new(Default::default);
-static RESUMED_ACTIVITIES: Lazy<Mutex<HashSet<ActivityId>>> = Lazy::new(Default::default);
 
 pub fn main_window_manager() -> Option<GlobalRef> {
   WINDOW_MANAGER.lock().unwrap().values().next().cloned()
@@ -472,17 +451,8 @@ pub unsafe fn onCreate(
   handle_intent(env, intent);
 }
 
-#[allow(non_snake_case)]
-pub unsafe fn onResume(mut env: JNIEnv, _: JClass, activity: JObject) {
-  let activity_id = activity_id(&mut env, &activity);
-  let did_resume = !RESUMED_ACTIVITIES.lock().unwrap().insert(activity_id);
-  // first Activity onResume() is called even after onCreate()
-  // to match the iOS implementation, we ignore the first resume event
-  if did_resume {
-    wake(Event::Resume {
-      id: WindowId(super::WindowId(activity_id)),
-    });
-  }
+pub unsafe fn resume(_: JNIEnv, _: JClass, _: JObject) {
+  wake(Event::Resume);
 }
 
 #[allow(non_snake_case)]

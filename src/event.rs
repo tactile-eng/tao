@@ -77,6 +77,12 @@ pub enum Event<'a, T: 'static> {
   /// Emitted when an event is sent from [`EventLoopProxy::send_event`](crate::event_loop::EventLoopProxy::send_event)
   UserEvent(T),
 
+  /// Emitted when the application has been suspended.
+  Suspended,
+
+  /// Emitted when the application has been resumed.
+  Resumed,
+
   /// Emitted when all of the event loop's input events have been processed and redraw processing
   /// is about to begin.
   ///
@@ -182,6 +188,8 @@ impl<T: Clone> Clone for Event<'static, T> {
         scene: scene.clone(),
         options: options.clone(),
       },
+      Suspended => Suspended,
+      Resumed => Resumed,
     }
   }
 }
@@ -206,6 +214,8 @@ impl<'a, T> Event<'a, T> {
       }),
       #[cfg(target_os = "ios")]
       SceneRequested { scene, options } => Ok(SceneRequested { scene, options }),
+      Suspended => Ok(Suspended),
+      Resumed => Ok(Resumed),
     }
   }
 
@@ -232,6 +242,8 @@ impl<'a, T> Event<'a, T> {
       }),
       #[cfg(target_os = "ios")]
       SceneRequested { scene, options } => Some(SceneRequested { scene, options }),
+      Suspended => Some(Suspended),
+      Resumed => Some(Resumed),
     }
   }
 }
