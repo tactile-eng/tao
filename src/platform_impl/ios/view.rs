@@ -669,27 +669,6 @@ pub fn create_delegate_class() {
     }
   }
 
-  unsafe fn handle_tao_window_events(event: impl Fn() -> WindowEvent<'static>) {
-    let app: id = msg_send![class!(UIApplication), sharedApplication];
-    let windows: id = msg_send![app, windows];
-    let windows_enum: id = msg_send![windows, objectEnumerator];
-    let mut events = Vec::new();
-    loop {
-      let window: id = msg_send![windows_enum, nextObject];
-      if window == nil {
-        break;
-      }
-      let is_tao_window: bool = msg_send![window, isKindOfClass: class!(TaoUIWindow)];
-      if is_tao_window {
-        events.push(EventWrapper::StaticEvent(Event::WindowEvent {
-          window_id: RootWindowId(window.into()),
-          event: event(),
-        }));
-      }
-    }
-    app_state::handle_nonuser_events(events);
-  }
-
   // custom URL schemes
   // https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app
   extern "C" fn application_open_url(
@@ -730,7 +709,7 @@ pub fn create_delegate_class() {
   }
 
   extern "C" fn will_resign_active(_: &Object, _: Sel, _: id) {
-    unsafe { handle_tao_window_events(|| WindowEvent::Suspended) }
+    unsafe { app_state::handle_nonuser_event(EventWrapper::StaticEvent(Event::Suspended)) }
   }
 
   extern "C" fn will_enter_foreground(_: &Object, _: Sel, _: id) {}
@@ -738,7 +717,24 @@ pub fn create_delegate_class() {
 
   extern "C" fn will_terminate(_: &Object, _: Sel, _: id) {
     unsafe {
-      handle_tao_window_events(|| WindowEvent::Destroyed);
+      let app: id = msg_send![class!(UIApplication), sharedApplication];
+      let windows: id = msg_send![app, windows];
+      let windows_enum: id = msg_send![windows, objectEnumerator];
+      let mut events = Vec::new();
+      loop {
+        let window: id = msg_send![windows_enum, nextObject];
+        if window == nil {
+          break;
+        }
+        let is_tao_window: bool = msg_send![window, isKindOfClass: class!(TaoUIWindow)];
+        if is_tao_window {
+          events.push(EventWrapper::StaticEvent(Event::WindowEvent {
+            window_id: RootWindowId(window.into()),
+            event: WindowEvent::Destroyed,
+          }));
+        }
+      }
+      app_state::handle_nonuser_events(events);
       app_state::terminated();
     }
   }
@@ -751,14 +747,12 @@ pub fn create_delegate_class() {
   .expect("Failed to declare class `AppDelegate`");
 
   unsafe {
-    let uses_scenes = multiple_scenes_enabled();
-
     decl.add_method(
       sel!(application:didFinishLaunchingWithOptions:),
       did_finish_launching as extern "C" fn(_, _, _, _) -> _,
     );
 
-    if uses_scenes {
+    if multiple_scenes_enabled() {
       decl.add_method(
         sel!(application:configurationForConnectingSceneSession:options:),
         configuration_for_connecting_scene_session as extern "C" fn(_, _, _, _, _) -> _,
