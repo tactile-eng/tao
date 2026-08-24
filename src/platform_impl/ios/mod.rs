@@ -50,10 +50,8 @@
 //!
 //! This is how those event are represented in tao:
 //!
-//!  - sceneWillEnterForeground is WindowEvent::Resumed for each window in the scene
-//!  - sceneWillResignActive is WindowEvent::Suspended for each window in the scene
-//!  - applicationWillEnterForeground is WindowEvent::Resumed for each window in non-scene apps
-//!  - applicationWillResignActive is WindowEvent::Suspended for each window in non-scene apps
+//!  - applicationDidBecomeActive is Resumed
+//!  - applicationWillResignActive is Suspended
 //!  - applicationWillTerminate is LoopDestroyed
 //!
 //! Keep in mind that after LoopDestroyed event is received every attempt to draw with

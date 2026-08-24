@@ -77,6 +77,12 @@ pub enum Event<'a, T: 'static> {
   /// Emitted when an event is sent from [`EventLoopProxy::send_event`](crate::event_loop::EventLoopProxy::send_event)
   UserEvent(T),
 
+  /// Emitted when the application has been suspended.
+  Suspended,
+
+  /// Emitted when the application has been resumed.
+  Resumed,
+
   /// Emitted when all of the event loop's input events have been processed and redraw processing
   /// is about to begin.
   ///
@@ -171,6 +177,8 @@ impl<T: Clone> Clone for Event<'static, T> {
       RedrawRequested(wid) => RedrawRequested(*wid),
       RedrawEventsCleared => RedrawEventsCleared,
       LoopDestroyed => LoopDestroyed,
+      Suspended => Suspended,
+      Resumed => Resumed,
       Opened { urls } => Opened { urls: urls.clone() },
       Reopen {
         has_visible_windows,
@@ -198,6 +206,8 @@ impl<'a, T> Event<'a, T> {
       RedrawRequested(wid) => Ok(RedrawRequested(wid)),
       RedrawEventsCleared => Ok(RedrawEventsCleared),
       LoopDestroyed => Ok(LoopDestroyed),
+      Suspended => Ok(Suspended),
+      Resumed => Ok(Resumed),
       Opened { urls } => Ok(Opened { urls }),
       Reopen {
         has_visible_windows,
@@ -224,6 +234,8 @@ impl<'a, T> Event<'a, T> {
       RedrawRequested(wid) => Some(RedrawRequested(wid)),
       RedrawEventsCleared => Some(RedrawEventsCleared),
       LoopDestroyed => Some(LoopDestroyed),
+      Suspended => Some(Suspended),
+      Resumed => Some(Resumed),
       Opened { urls } => Some(Opened { urls }),
       Reopen {
         has_visible_windows,
@@ -289,40 +301,6 @@ pub enum WindowEvent<'a> {
   /// - **Windows / Linux:** Only fired if the [`crate::window::Window`] is dropped.
   /// - **macOS:** Fired if the [`crate::window::Window`] is dropped or the dock `Quit` item is clicked.
   Destroyed,
-
-  /// The window has been started.
-  ///
-  /// ## Platform-specific
-  ///
-  /// - **Android**: This is triggered by `onStart` method of the Activity.
-  /// - **Linux / macOS / iOS / Windows**: Unsupported.
-  Started,
-
-  /// The window has been suspended.
-  ///
-  /// ## Platform-specific
-  ///
-  /// - **Android**: This is triggered by `onPause` method of the Activity.
-  /// - **iOS**: This is triggered by `applicationWillResignActive` method of the UIApplicationDelegate.
-  /// - **Linux / macOS / Windows**: Unsupported.
-  Suspended,
-
-  /// The window has been resumed.
-  ///
-  /// ## Platform-specific
-  ///
-  /// - **Android**: This is triggered by `onResume` method of the Activity. The first onResume() is ignored to match the iOS implementation, since that is called on activity creation.
-  /// - **iOS**: This is triggered by `applicationWillEnterForeground` method of the UIApplicationDelegate.
-  /// - **Linux / macOS / Windows**: Unsupported.
-  Resumed,
-
-  /// The window has been stopped.
-  ///
-  /// ## Platform-specific
-  ///
-  /// - **Android**: This is triggered by `onStop` method of the Activity.
-  /// - **Linux / macOS / iOS / Windows**: Unsupported.
-  Stopped,
 
   /// A file has been dropped into the window.
   ///
@@ -477,10 +455,6 @@ impl Clone for WindowEvent<'static> {
       Moved(pos) => Moved(*pos),
       CloseRequested => CloseRequested,
       Destroyed => Destroyed,
-      Started => Started,
-      Suspended => Suspended,
-      Resumed => Resumed,
-      Stopped => Stopped,
       DroppedFile(file) => DroppedFile(file.clone()),
       HoveredFile(file) => HoveredFile(file.clone()),
       HoveredFileCancelled => HoveredFileCancelled,
@@ -573,10 +547,6 @@ impl<'a> WindowEvent<'a> {
       Moved(position) => Some(Moved(position)),
       CloseRequested => Some(CloseRequested),
       Destroyed => Some(Destroyed),
-      Started => Some(Started),
-      Suspended => Some(Suspended),
-      Resumed => Some(Resumed),
-      Stopped => Some(Stopped),
       DroppedFile(file) => Some(DroppedFile(file)),
       HoveredFile(file) => Some(HoveredFile(file)),
       HoveredFileCancelled => Some(HoveredFileCancelled),

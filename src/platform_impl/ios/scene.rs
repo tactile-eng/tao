@@ -49,13 +49,7 @@ pub unsafe fn multiple_scenes_enabled() -> bool {
 
 unsafe fn handle_scene_window_events(scene: &UIScene, event: impl Fn() -> WindowEvent<'static>) {
   if let Some(window_scene) = scene.downcast_ref::<UIWindowScene>() {
-    let windows = window_scene.windows();
-
-    if windows.is_empty() {
-      log::debug!("scene has no windows; no window events were emitted");
-    }
-
-    for window in windows {
+    for window in window_scene.windows() {
       app_state::handle_nonuser_event(EventWrapper::StaticEvent(Event::WindowEvent {
         window_id: RootWindowId(window.into()),
         event: event(),
@@ -112,17 +106,19 @@ define_class!(
     #[unsafe(method(sceneWillResignActive:))]
     fn sceneWillResignActive(&self, scene: &UIScene) {
       unsafe {
-        handle_scene_window_events(scene, || WindowEvent::Focused(false));
-        handle_scene_window_events(scene, || WindowEvent::Suspended);
+        if let Some(window_scene) = scene.downcast_ref::<UIWindowScene>() {
+          for window in window_scene.windows() {
+            app_state::handle_nonuser_event(EventWrapper::StaticEvent(Event::WindowEvent {
+              window_id: RootWindowId(window.into()),
+              event: WindowEvent::Focused(false),
+            }));
+          }
+        }
       }
     }
 
     #[unsafe(method(sceneWillEnterForeground:))]
-    fn sceneWillEnterForeground(&self, scene: &UIScene) {
-      unsafe {
-        handle_scene_window_events(scene, || WindowEvent::Resumed);
-      }
-    }
+    fn sceneWillEnterForeground(&self, _scene: &UIScene) {}
 
     #[unsafe(method(sceneDidEnterBackground:))]
     fn sceneDidEnterBackground(&self, _scene: &UIScene) {}
