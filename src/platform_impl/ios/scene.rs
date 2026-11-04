@@ -108,7 +108,6 @@ define_class!(
     fn sceneWillResignActive(&self, scene: &UIScene) {
       unsafe {
         handle_scene_window_events(scene, || WindowEvent::Focused(false));
-        handle_scene_window_events(scene, || WindowEvent::Suspended);
       }
     }
 
@@ -120,7 +119,11 @@ define_class!(
     }
 
     #[unsafe(method(sceneDidEnterBackground:))]
-    fn sceneDidEnterBackground(&self, _scene: &UIScene) {}
+    fn sceneDidEnterBackground(&self, scene: &UIScene) {
+      unsafe {
+        handle_scene_window_events(scene, || WindowEvent::Suspended);
+      }
+    }
 
     #[unsafe(method(scene:openURLContexts:))]
     fn scene_openURLContexts(&self, _scene: &UIScene, url_contexts: &NSSet<UIOpenURLContext>) {
